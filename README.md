@@ -56,17 +56,19 @@ git clone https://github.com/tiancai4652/checkpoint-agent-loop-v4.git \
 
 ### 依赖（全部可选，缺失自动降级，无硬依赖）
 
-设计链路 / PM 增强用到的 skill **不用预装**：首次用到时 agent 会探活，缺失就从上游自装，装不了就降级继续（当轮降级、重启后生效）。
+设计链路 / PM 增强用到的 skill **不用预装**：首次用到时 agent 会探活（多根：`~/.config/opencode/skills` → `~/.opencode/skills` → `~/.claude/skills`），缺失就从上游自装，装不了就降级继续（当轮降级、重启后生效）。
 
-| skill | 来源 | 谁用 | 缺失时 |
+| 依赖 | 来源 | 谁用 | 缺失时 |
 |---|---|---|---|
 | ui-ux-pro-max | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)（MIT） | engineer | 用常识给口语化风格候选 |
 | Webdesign | [danielmiessler/LifeOS](https://github.com/danielmiessler/LifeOS) → `LifeOS/install/skills/Webdesign/`（**只拷这一个文件夹，不装整个 LifeOS**） | engineer | engineer 自行按方向写 |
-| huashu-design | [alchaincyf/huashu-design](https://github.com/alchaincyf/huashu-design)（自装剔除 26MB BGM/demos） | engineer（按需） | 跳过高保真，用文字方案 |
+| huashu-design | [alchaincyf/huashu-design](https://github.com/alchaincyf/huashu-design)（自装**只删 `assets/bgm-*.mp3`**，保留 jsx/svg 组件） | engineer（按需） | 跳过高保真，用文字方案 |
 | RedTeam | [danielmiessler/LifeOS](https://github.com/danielmiessler/LifeOS) → `LifeOS/install/skills/RedTeam/` | pm | pm 自查三问 |
-| PM Skills | [deanpeters/Product-Manager-Skills](https://github.com/deanpeters/Product-Manager-Skills) | pm | pm 裸聊，不阻塞 |
+| PM Skills | [deanpeters/Product-Manager-Skills](https://github.com/deanpeters/Product-Manager-Skills) → `skills/` 下 **77 个** skill | pm | pm 裸聊，不阻塞 |
+| **TaskDeck** | 本机私有工具（`~/tools/taskdeck/`，127.0.0.1:8747） | engineer | **回退到 `nohup` + 日志文件**，不阻塞（换台设备没装也能跑） |
 | agent-project-bootstrapper | 建议先跑，建 AGENTS/DECISIONS/CHECKPOINT-REPORT 三件套底座 | 驾驶者 | 建议先跑再开车 |
-| taskdeck | 后台长任务监控面板 | engineer | 后台任务退化为普通执行，无健康监控 |
+
+> LifeOS 系 skill（Webdesign / RedTeam）装后会自动跑 `assets/sanitize-lifeos-skill.sh` 做适配——剥掉「强制语音通知 POST localhost:31337」、中和 LifeOS 专属日志路径，否则在非 LifeOS 环境会空跑/报错。
 
 ## 用法
 
@@ -87,15 +89,22 @@ git clone https://github.com/tiancai4652/checkpoint-agent-loop-v4.git \
 
 ### 无人值守（可选）
 
-用 task-run 派发循环脚本，它自己也会被面板监控（脚本只认根指针，开新轮无需改动）：
+有 TaskDeck 就用它派发（面板监控）；没有就 `nohup` + 日志（脚本只认根指针，开新轮无需改动）：
 
 ```bash
+# 有 TaskDeck：
 python3 ~/tools/taskdeck/task-run.py \
   --name "三角色v4无人值守循环" \
   --goal "反复推进本轮 PRD.md 当前任务，到检查点等评审或按推荐方案继续" \
   --max-minutes 480 \
   -- bash ~/.config/opencode/skills/checkpoint-agent-loop-v4/assets/loop.sh <session_id> [超时分钟]
+
+# 无 TaskDeck：
+nohup bash ~/.config/opencode/skills/checkpoint-agent-loop-v4/assets/loop.sh <session_id> [超时分钟] \
+  > docs/runs/<轮>/logs/loop.log 2>&1 &
 ```
+
+循环脚本无可用终端（`/dev/tty` 不可读，如容器/后台）时，检查点会直接走「超时默认」，不会卡住。
 
 ## 相关版本
 
@@ -116,8 +125,17 @@ checkpoint-agent-loop-v4/
     ├── engineer.md      ← 工程师角色（实现、门控签名、task-run、L1/L2 设计链路）
     ├── researcher.md    ← 研究员角色（调研、结论回填）
     ├── PRD.md.tmpl      ← 需求契约模板（所属轮次 + 设计级别 + 需求批判 + 研究清单）
-    └── loop.sh          ← 无人值守循环脚本（只认根指针）
+    ├── sanitize-lifeos-skill.sh ← LifeOS skill 跨环境适配（剥语音通知 + 中和 LifeOS 路径）
+    └── loop.sh          ← 无人值守循环脚本（只认根指针；无 tty 自动走超时默认）
 ```
+
+## 已知限制 / 跨环境
+
+- **面向 opencode**：角色文件放 `.opencode/agent/`、无人值守用 `opencode run --session`。在 claude/codex 上需改角色目录与 loop 命令。
+- **Windows**：轮次归档的根指针默认用 symlink，Windows（无权限/无开发者模式）会自动降级为「指针壳文件」（根 `PRD.md` 首行 `POINTER: <真实路径>`）。
+- **TaskDeck 是私有工具**：别的设备没有 → 后台任务自动回退 `nohup` + 日志，不影响流程。
+- **Webdesign 部分能力依赖 LifeOS**：DirectDesign 路径自包含可用；`/design`、`/design-sync`、ClaudeDesign 需 LifeOS harness / claude.ai，非 LifeOS 环境只有部分能力。
+- **自装需网络 + git**：无网络时直接降级，不阻塞。
 
 ## 成本提示
 

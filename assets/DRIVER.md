@@ -10,18 +10,21 @@ v4 = v3 全部硬规则（大白话汇报、TaskDeck 集成、轮次归档）+ *
 1. **算序号**：看 `docs/runs/` 已有目录，取最大 NNN + 1（三位数，001 起）。
 2. **建目录**：`mkdir -p docs/runs/NNN-<功能名>/`（功能名用短slug，中文亦可，避免空格）。
 3. **迁移存量**（仅老项目第一轮）：根目录已有 `PRD.md`/`CHECKPOINT-REPORT.md` → 先挪进本轮目录再建指针，不覆盖丢历史。
-4. **刷指针**：
+4. **刷指针**（两种实现，按平台自动选）：
    ```bash
+   # 首选：symlink（mac/Linux）
    ln -sfn docs/runs/NNN-<功能名>/PRD.md PRD.md
    ln -sfn docs/runs/NNN-<功能名>/CHECKPOINT-REPORT.md CHECKPOINT-REPORT.md
    ```
-   指针允许暂时悬空（pm 还没写出 PRD 时）。
+   - **symlink 失败**（Windows 无权限 / 无开发者模式）→ 改用**指针壳文件**：根 `PRD.md` 内容只写一行 `POINTER: docs/runs/NNN-<功能名>/PRD.md`（CHECKPOINT-REPORT 同理）。
+   - 读取方统一规则：根文件首行若匹配 `POINTER: <路径>` → 按该路径读真实文件；否则按普通文件读（symlink 对读取透明）。真实文件**始终写在本轮目录**，根文件只是入口。
+   - 指针允许暂时悬空/未建（pm 还没写出 PRD 时）。
 5. **本轮产出全部写本轮目录**：PRD、CHECKPOINT-REPORT、设计方案、评审附件都落在 `docs/runs/NNN-<功能名>/`；根目录只留指针。跨轮共享的知识才进 `AGENTS.md` / `DECISIONS.md` / `docs/decisions-archive/`。
 6. **决策带轮次标记**：本轮所有写进 `DECISIONS.md` 的条目，开头带 `[NNN-<功能名>]`（例：`[002-导出Excel] 2026-09-22：...`）。
 
 ## 开场必读
 
-`AGENTS.md` + `DECISIONS.md` + `PRD.md`（根指针 → 本轮）+ `CHECKPOINT-REPORT.md`（根指针 → 本轮）+ `PRD.md` 的「研究结论清单」（engineer 先读，不读就开干是断链）。根指针由「开轮」建立，照常读即可。
+`AGENTS.md` + `DECISIONS.md` + `PRD.md`（根指针 → 本轮）+ `CHECKPOINT-REPORT.md`（根指针 → 本轮）+ `PRD.md` 的「研究结论清单」（engineer 先读，不读就开干是断链）。根指针由「开轮」建立，照常读即可；若根文件首行是 `POINTER: <路径>`，按路径读真实文件。
 
 ## 主循环（每次迭代）
 
@@ -58,23 +61,31 @@ v4 = v3 全部硬规则（大白话汇报、TaskDeck 集成、轮次归档）+ *
 
 做完就停止，等用户批复。**用户问"你觉得怎么样"时，直接按上面的分析结构作答，不要反问用户。**
 
-## 后台长任务一律走 TaskDeck（硬性，v2 核心）
+## 后台长任务（TaskDeck 可用则用，不可用则带日志回退）
 
-预计运行超过 1 分钟、且要在后台跑的命令/脚本（批量抓取、编译、数据处理、无人值守循环），**禁止裸 `nohup`/`&`，必须用 task-run 派发**：
+预计运行超过 1 分钟、且要在后台跑的命令/脚本（批量抓取、编译、数据处理、无人值守循环）：
 
-```bash
-python3 ~/tools/taskdeck/task-run.py \
-  --name "短标题" \
-  --goal "大白话写给用户看：这个脚本干嘛、预计多久、产出什么" \
-  --max-minutes 120 \
-  -- <命令>
-```
-
-1. `--name` 短标题；`--goal` **必须用大白话写**（用户在面板上靠它理解脚本在干嘛）。
-2. 派发后**把详情页 URL 告诉用户**；监控看 TaskDeck 面板（http://127.0.0.1:8747/ ，自动判卡死/空转/超期），agent 不做轮询盯梢。
-3. **汇报时体检**：到检查点/任何汇报点，用 `curl -s http://127.0.0.1:8747/api/tasks` 汇总本批后台任务的健康状态（运行中 / 疑似卡死 / 疑似空转 / 超期 / 已结束），写进大白话汇报的「有没有坏消息」。
-4. 无人值守 `loop.sh` 本身也是后台长任务 → 同样用 task-run 派发启动。
-5. 派发前不确定服务活着 → `curl -s http://127.0.0.1:8747/api/health` 探活。
+1. **先探活**：`curl -s -m 2 http://127.0.0.1:8747/api/health`
+2. **可用 → 用 task-run 派发**（推荐）：
+   ```bash
+   python3 ~/tools/taskdeck/task-run.py \
+     --name "短标题" \
+     --goal "大白话写给用户看：这个脚本干嘛、预计多久、产出什么" \
+     --max-minutes 120 \
+     -- <命令>
+   ```
+   - `--goal` **必须用大白话写**（用户在面板上靠它理解脚本在干嘛）。
+   - 派发后**把详情页 URL 告诉用户**；监控看 TaskDeck 面板（http://127.0.0.1:8747/ ，自动判卡死/空转/超期），agent 不做轮询盯梢。
+   - **汇报时体检**：到检查点/任何汇报点，用 `curl -s http://127.0.0.1:8747/api/tasks` 汇总本批后台任务的健康状态（运行中 / 疑似卡死 / 疑似空转 / 超期 / 已结束），写进大白话汇报的「有没有坏消息」。
+3. **不可用（换台设备/没装 TaskDeck）→ 回退到带日志的后台**，**不得因此卡住，也不得静默裸跑**：
+   ```bash
+   mkdir -p docs/runs/NNN-<功能名>/logs
+   nohup <命令> > docs/runs/NNN-<功能名>/logs/<名字>.log 2>&1 &
+   echo $! > docs/runs/NNN-<功能名>/logs/<名字>.pid
+   ```
+   - 告知用户：「本机无 TaskDeck 面板，任务已在后台运行，日志在 `<路径>`」。
+   - 汇报时说明"无面板，请按需查看日志"；到检查点用 `ps -p $(cat <pid文件>)` 判断是否还在跑。
+4. 无人值守 `loop.sh` 同样按上面规则启动（有 TaskDeck 走 task-run，没有就 nohup + 日志）。
 
 ## 需求批判门控（硬性，v4 核心）
 
@@ -110,15 +121,27 @@ PRD 交给用户确认**之前**，pm 必须对需求本身做一次对抗性审
 
 **依赖矩阵（探活 → 缺则自装 → 装不了降级，全部非硬依赖）**：
 
-| skill | 探活路径 | 缺则自装来源 | 装不了/缺失时降级 |
-|---|---|---|---|
-| ui-ux-pro-max | `~/.config/opencode/skills/ui-ux-pro-max/SKILL.md` | `git clone --depth 1 https://github.com/nextlevelbuilder/ui-ux-pro-max-skill /tmp/uiux` → 拷 `.claude/skills/ui-ux-pro-max` 到 `~/.config/opencode/skills/` → 清理（MIT） | 用常识给 2~3 个口语化风格候选 |
-| Webdesign | `~/.config/opencode/skills/Webdesign/SKILL.md` | `git clone --depth 1 https://github.com/danielmiessler/LifeOS /tmp/lifeos` → 拷 `LifeOS/install/skills/Webdesign` 到 `~/.config/opencode/skills/` → 清理（**只拷这一个文件夹，不装整个 LifeOS**） | engineer 自行按设计方向写（少一层规范） |
-| huashu-design | `~/.config/opencode/skills/huashu-design/SKILL.md` | `git clone --depth 1 https://github.com/alchaincyf/huashu-design /tmp/huashu` → 拷其 skill 目录到 `~/.config/opencode/skills/` → **剔除 BGM 音频/demos（约 26MB）** → 清理 | 跳过高保真原型，用文字方案 + 口语化描述 |
-| RedTeam | `~/.config/opencode/skills/RedTeam/SKILL.md` | 同 LifeOS 仓库 → 拷 `LifeOS/install/skills/RedTeam` | pm 自查三问（见上「需求批判门控」） |
-| PM Skills | `~/.config/opencode/skills/` 下对应目录 | `https://github.com/deanpeters/Product-Manager-Skills` | pm 裸聊，不阻塞 |
+**探活要多根**（skill 可能装在不同位置，只查一个根会误判缺失、重复自装）：
+```bash
+for r in ~/.config/opencode/skills ~/.opencode/skills ~/.claude/skills; do
+  [ -f "$r/<名字>/SKILL.md" ] && echo "FOUND: $r/<名字>"
+done
+```
+命中任一即视为已装（直接用）；都没有才自装，**安装目标统一为 `~/.config/opencode/skills/`**。
+
+| skill | 自装命令（实测过的路径） | 缺失时降级 |
+|---|---|---|
+| ui-ux-pro-max | `git clone --depth 1 https://github.com/nextlevelbuilder/ui-ux-pro-max-skill /tmp/uiux && cp -R /tmp/uiux/.claude/skills/ui-ux-pro-max ~/.config/opencode/skills/ && rm -rf /tmp/uiux`（MIT） | 用常识给 2~3 个口语化风格候选 |
+| Webdesign | `git clone --depth 1 https://github.com/danielmiessler/LifeOS /tmp/lifeos && cp -R /tmp/lifeos/LifeOS/install/skills/Webdesign ~/.config/opencode/skills/ && rm -rf /tmp/lifeos`（**只拷这一个文件夹，不装整个 LifeOS**） | engineer 自行按方向写 |
+| huashu-design | `git clone --depth 1 https://github.com/alchaincyf/huashu-design /tmp/huashu && rm -f /tmp/huashu/assets/bgm-*.mp3 && rm -rf /tmp/huashu/.git /tmp/huashu/demos && cp -R /tmp/huashu ~/.config/opencode/skills/huashu-design && rm -rf /tmp/huashu`（**只删 BGM mp3，保留 assets 里的 jsx/svg 组件**） | 跳过高保真，用文字方案 |
+| RedTeam | `git clone --depth 1 https://github.com/danielmiessler/LifeOS /tmp/lifeos && cp -R /tmp/lifeos/LifeOS/install/skills/RedTeam ~/.config/opencode/skills/ && rm -rf /tmp/lifeos` → **装后跑 `assets/sanitize-lifeos-skill.sh ~/.config/opencode/skills/RedTeam`**（剥语音通知 + 中和 LifeOS 日志路径） | pm 自查三问 |
+| PM Skills | `git clone --depth 1 https://github.com/deanpeters/Product-Manager-Skills /tmp/pmskills && cp -R /tmp/pmskills/skills/* ~/.config/opencode/skills/ && rm -rf /tmp/pmskills`（仓库 `skills/` 下是 77 个 skill，一次全装） | pm 裸聊，不阻塞 |
+
+**LifeOS 系 skill（Webdesign / RedTeam 等）装后必做**：跑 `assets/sanitize-lifeos-skill.sh <目录>`——否则它们自带「强制语音通知 POST localhost:31337」（无此服务会空跑/报错）和 LifeOS 专属日志路径。
 
 **自装通用规则**：装完先试调 `skill` 工具；当前会话加载不到（skill 列表随 opencode 启动载入，新装的要重启才生效）→ 本轮走降级路径，并提醒用户"已装好，重启 opencode 后可用"。无网络 / git 失败 → 直接降级，不阻塞、不硬扛、不编造检索结果。
+
+**Webdesign 能力边界**：其 DirectDesign 路径自包含可用；但 `/design`、`/design-sync`、ClaudeDesign 三条路径依赖 LifeOS harness / claude.ai，非 LifeOS 环境只有部分能力——够用即可，缺的能力按降级处理。
 
 **例外**：用户已在 PRD「UI/UX 设计决策」里确认过设计基线 → 跳过询问，直接遵守基线。
 
