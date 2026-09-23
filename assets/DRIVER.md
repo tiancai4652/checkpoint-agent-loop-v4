@@ -140,13 +140,14 @@ done
 | ui-ux-pro-max | `git clone --depth 1 https://github.com/nextlevelbuilder/ui-ux-pro-max-skill /tmp/uiux && cp -R /tmp/uiux/.claude/skills/ui-ux-pro-max ~/.config/opencode/skills/ && rm -rf /tmp/uiux`（MIT） | 用常识给 2~3 个口语化风格候选 |
 | Webdesign | `git clone --depth 1 https://github.com/danielmiessler/LifeOS /tmp/lifeos && cp -R /tmp/lifeos/LifeOS/install/skills/Webdesign ~/.config/opencode/skills/ && rm -rf /tmp/lifeos`（**只拷这一个文件夹，不装整个 LifeOS**） | engineer 自行按方向写 |
 | huashu-design | `git clone --depth 1 https://github.com/alchaincyf/huashu-design /tmp/huashu && rm -f /tmp/huashu/assets/bgm-*.mp3 && rm -rf /tmp/huashu/.git /tmp/huashu/demos && cp -R /tmp/huashu ~/.config/opencode/skills/huashu-design && rm -rf /tmp/huashu`（**只删 BGM mp3，保留 assets 里的 jsx/svg 组件**） | 跳过高保真，用文字方案 |
-| RedTeam | `git clone --depth 1 https://github.com/danielmiessler/LifeOS /tmp/lifeos && cp -R /tmp/lifeos/LifeOS/install/skills/RedTeam ~/.config/opencode/skills/ && rm -rf /tmp/lifeos` → **装后跑 `assets/sanitize-lifeos-skill.sh ~/.config/opencode/skills/RedTeam`**（剥语音通知 + 中和 LifeOS 日志路径） | pm 自查三问 |
+| RedTeam | `git clone --depth 1 https://github.com/danielmiessler/LifeOS /tmp/lifeos && cp -R /tmp/lifeos/LifeOS/install/skills/RedTeam ~/.config/opencode/skills/ && rm -rf /tmp/lifeos` → **装后跑本 skill 目录下的 `assets/sanitize-lifeos-skill.sh ~/.config/opencode/skills/RedTeam`**（剥语音通知 + 中和 LifeOS 日志路径） | pm 自查三问 |
 | PM Skills | `git clone --depth 1 https://github.com/deanpeters/Product-Manager-Skills /tmp/pmskills && cp -R /tmp/pmskills/skills/* ~/.config/opencode/skills/ && rm -rf /tmp/pmskills`（仓库 `skills/` 下是 77 个 skill，一次全装） | pm 裸聊，不阻塞 |
 | **TaskDeck**（后台服务，非 skill） | `git clone --depth 1 https://github.com/tiancai4652/taskdeck /tmp/taskdeck && bash /tmp/taskdeck/install.sh && rm -rf /tmp/taskdeck`（Python3 stdlib 零依赖，跨 mac/Linux/Win；默认注册开机自启） | 回退 `nohup` + 本轮目录日志（见「后台长任务」步骤 4） |
 
-**LifeOS 系 skill（Webdesign / RedTeam 等）装后必做**：跑 `assets/sanitize-lifeos-skill.sh <目录>`——否则它们自带「强制语音通知 POST localhost:31337」（无此服务会空跑/报错）和 LifeOS 专属日志路径。
+**LifeOS 系 skill（Webdesign / RedTeam 等）装后必做**：跑本 skill 目录下的 `assets/sanitize-lifeos-skill.sh <目录>`（完整路径如 `~/.config/opencode/skills/checkpoint-agent-loop-v4/assets/sanitize-lifeos-skill.sh`）——否则它们自带「强制语音通知 POST localhost:31337」（无此服务会空跑/报错）和 LifeOS 专属日志路径。
 
-**自装通用规则**：装完先试调 `skill` 工具；当前会话加载不到（skill 列表随 opencode 启动载入，新装的要重启才生效）→ 本轮走降级路径，并提醒用户"已装好，重启 opencode 后可用"。无网络 / git 失败 → 直接降级，不阻塞、不硬扛、不编造检索结果。
+**自装通用规则**（skill 类）：装完先试调 `skill` 工具；当前会话加载不到（skill 列表随 opencode 启动载入，新装的要重启才生效）→ 本轮走降级路径，并提醒用户"已装好，重启 opencode 后可用"。无网络 / git 失败 → 直接降级，不阻塞、不硬扛、不编造检索结果。
+**TaskDeck 例外**（它不是 skill）：`install.sh` 装完直接探活 `http://127.0.0.1:8747/api/health` 即可用，不依赖 `skill` 工具、不需重启 opencode。
 
 **Webdesign 能力边界**：其 DirectDesign 路径自包含可用；但 `/design`、`/design-sync`、ClaudeDesign 三条路径依赖 LifeOS harness / claude.ai，非 LifeOS 环境只有部分能力——够用即可，缺的能力按降级处理。
 

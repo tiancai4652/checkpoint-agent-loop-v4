@@ -108,7 +108,7 @@ nohup bash ~/.config/opencode/skills/checkpoint-agent-loop-v4/assets/loop.sh <se
 
 ## 相关版本
 
-- [checkpoint-agent-loop](https://github.com/) 原版：三角色 + 检查点门控
+- checkpoint-agent-loop 原版（本地）：三角色 + 检查点门控
 - [checkpoint-agent-loop-v2](https://github.com/tiancai4652/checkpoint-agent-loop-v2)：+ 大白话汇报 / TaskDeck / 前端设计关卡
 - [checkpoint-agent-loop-v3](https://github.com/tiancai4652/checkpoint-agent-loop-v3)：+ 轮次归档
 - **checkpoint-agent-loop-v4（本仓库）**：+ 设计链路（分级）+ PM 增强（PM Skills + RedTeam）

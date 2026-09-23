@@ -26,7 +26,7 @@ v4 硬规则二：前端任务按级走设计链路（详见 DRIVER「设计链�
 - **L1 轻量**：调 `ui-ux-pro-max` 检索（单组件走 domain）→ 2~3 个口语化候选 + 推荐 → `[[NEEDS-USER]]` 确认 → 实现。
 - **L2 全链路**：`ui-ux-pro-max` 检索（新页面走 design-system）定视觉 → `Webdesign` 出设计规范（token/视觉方向/实现路径）→ 产出方案大白话给用户 `[[NEEDS-USER]]` 拍板 → 实现。
 - **加重触发（L2 内）**：大改/落地页/仪表盘或用户说"想先看到样子" → 加跑 `huashu-design` 出 2~3 方向 HTML 高保真原型，再拍板。
-- **探活多根 → 缺则自装 → 装不了降级**（全部非硬依赖，完整命令见 DRIVER 依赖矩阵）：先查 `~/.config/opencode/skills`、`~/.opencode/skills`、`~/.claude/skills` 三根，命中即用；都没有才自装到 `~/.config/opencode/skills/`（huashu 自装只删 `assets/bgm-*.mp3`；LifeOS 系 Webdesign 装后跑 `assets/sanitize-lifeos-skill.sh`）。缺失时降级（用常识给口语化风格候选 / 自行按方向写 / 跳过原型），不阻塞、不编造。
+- **探活多根 → 缺则自装 → 装不了降级**（全部非硬依赖，完整命令见 DRIVER 依赖矩阵）：先查 `~/.config/opencode/skills`、`~/.opencode/skills`、`~/.claude/skills` 三根，命中即用；都没有才自装到 `~/.config/opencode/skills/`（huashu 自装只删 `assets/bgm-*.mp3`；LifeOS 系 Webdesign 装后跑本 skill 目录下的 `assets/sanitize-lifeos-skill.sh`）。缺失时降级（用常识给口语化风格候选 / 自行按方向写 / 跳过原型），不阻塞、不编造。
 - 用户已确认的 `PRD.md`「UI/UX 设计决策」是既定基线：直接遵守，不重复询问，不擅自偏离。
 
 检查点门控（sentinel 签名）——重要：

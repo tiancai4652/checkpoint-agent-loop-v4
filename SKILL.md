@@ -50,12 +50,14 @@ description: |
    - **L1 组件级小改**（改样式/换文案/调布局/单组件）：`ui-ux-pro-max` 检索 → 口语化候选给用户确认 → 实现。
    - **L2 新页面/大改**（新页面、落地页、仪表盘、整站视觉）：`ui-ux-pro-max` 定视觉 → `Webdesign` 出设计规范 → `[[NEEDS-USER]]` 拍板 → 实现；L2 大改时 `RedTeam` 对设计方案批一轮（可选）。
    - **加重触发（L2 内按需）**：大改/落地页/仪表盘，或用户说"想先看到样子"→ 加跑 `huashu-design` 出 2~3 方向 HTML 高保真原型，再拍板。
-   - 四个 skill 全部「探活 → 缺则自装 → 装不了降级」，无硬依赖，缺谁降谁（来源见 DRIVER 依赖矩阵）。
+   - 设计链路涉及的 skill（`ui-ux-pro-max` / `Webdesign` / `huashu-design` / `RedTeam`）全部「探活 → 缺则自装 → 装不了降级」，无硬依赖，缺谁降谁（来源见 DRIVER 依赖矩阵）。
 6. **PM 增强（v4 硬性）**：
    - **PM Skills 按需辅助**：pm 讨论需求时按需求类型调用 PM Skills（PRD/用户旅程图/JTBD/故事板/原型人物画像等），选最贴合的 1~2 件，不逐件套用；缺失则 pm 裸聊，不阻塞。
    - **定稿前轻量 RedTeam 批判**：PRD 提交用户确认**之前**，pm 调 RedTeam（轻量单轮）产出「3 个最强反驳 + 推荐」，连 PRD 一起给用户——用户看完反驳再拍板。明确的小改动/指令式任务跳过；RedTeam 缺失降级为 pm 自查三问（伪需求？更简解法？用户真要的是什么？）。
 
 ## 使用流程
+
+> 下文 `assets/...` 均指**本 skill 安装目录**下的文件（如 `~/.config/opencode/skills/checkpoint-agent-loop-v4/assets/`），不是项目里的目录。
 
 1. **建底座**：先跑 `agent-project-bootstrapper` 生成三件套，确认不变项。
 2. **建角色**：把 `assets/` 下三个 role 文件（`pm.md`/`engineer.md`/`researcher.md`）放到项目的 `.opencode/agent/`，或合并进单个驾驶者 prompt。
@@ -70,7 +72,7 @@ description: |
 - **大白话汇报（v2 硬性）**：所有面向用户的汇报走 DRIVER 的「大白话汇报」模板。
 - **评审必含方案分析（硬性）**：停到 `[[CHECKPOINT]]`/`[[NEEDS-USER]]` 必须给「问题 → 2~3 候选（带推荐+理由）→ 总体倾向」，且每个方案用大白话讲后果。用户问"你觉得怎么样"直接按此结构作答，不反问。
 - **超时默认（10 分钟）**：检查点用户 10 分钟未回复 → 按推荐方案继续，`DECISIONS.md` 留痕。初始化确认关卡不适用。
-- **后台长任务（TaskDeck 可用则用）**：超 1 分钟的后台任务先探活 `127.0.0.1:8747`；可用 → `task-run` 派发并把详情页 URL 给用户；**不可用（换台设备）→ 回退到 `nohup` + 日志文件**并告知用户日志路径，不得卡住或静默裸跑。详见 DRIVER「后台长任务」。
+- **后台长任务（TaskDeck 可用则用）**：超 1 分钟的后台任务先探活 `127.0.0.1:8747`；可用 → `task-run` 派发并把详情页 URL 给用户；**不可用 → 先自装 TaskDeck（见下 Gotchas）**，装不了才回退 `nohup` + 日志文件并告知用户日志路径——不得卡住或静默裸跑。详见 DRIVER「后台长任务」。
 - **前端按级走设计链路（v4 硬性）**：engineer 自动判 L1/L2，判完一句话告知用户、PRD 写默认级别；L1 轻量路径，L2 全链路（大改/落地页/仪表盘/用户要求时加跑 huashu 高保真）。依赖 skill 缺失时先自装、装不了降级（详见 DRIVER「设计链路」）。用户已确认设计基线的除外。
 - **PRD 定稿前过 RedTeam 批判（v4 硬性）**：pm 提交 PRD 给用户确认前，先出「3 个最强反驳 + 推荐」（轻量单轮）；小任务跳过，RedTeam 缺失降级为自查三问。
 - **门控签名**：`[[CHECKPOINT]]` / `[[NEED-RESEARCH]]` / `[[NEEDS-USER]]`，方括号签名唯一，grep 判停/走。
@@ -100,7 +102,7 @@ description: |
   - 探活**多根**：`~/.config/opencode/skills` → `~/.opencode/skills` → `~/.claude/skills`（只查一个根会误判缺失、重复自装）
   - `ui-ux-pro-max`：`github.com/nextlevelbuilder/ui-ux-pro-max-skill`（MIT）
   - `huashu-design`：`github.com/alchaincyf/huashu-design`（自装**只删 `assets/bgm-*.mp3`**，保留 jsx/svg 组件与 demos）
-  - `Webdesign` / `RedTeam`：`github.com/danielmiessler/LifeOS` → `LifeOS/install/skills/<名字>/`（**只拷该文件夹，不装整个 LifeOS**）；装后跑 `assets/sanitize-lifeos-skill.sh <目录>` 剥语音通知、中和 LifeOS 日志路径
+  - `Webdesign` / `RedTeam`：`github.com/danielmiessler/LifeOS` → `LifeOS/install/skills/<名字>/`（**只拷该文件夹，不装整个 LifeOS**）；装后跑本 skill 目录下的 `assets/sanitize-lifeos-skill.sh <目录>` 剥语音通知、中和 LifeOS 日志路径
   - `PM Skills`：`github.com/deanpeters/Product-Manager-Skills` → 仓库 `skills/` 下 77 个 skill，`cp -R skills/* <skills根>/`
   - 旧 `design` skill（claudekit，无公开源）已被 Webdesign 替代，不再引用
   - 新装的 skill 本会话可能加载不到（opencode 启动时载入 skill 列表），当轮走降级、重启后生效
@@ -114,5 +116,5 @@ description: |
 - 驾驶规则：`assets/DRIVER.md`
 - 需求契约模板：`assets/PRD.md.tmpl`
 - 无人值守：`assets/loop.sh`
-- LifeOS skill 跨环境适配：`assets/sanitize-lifeos-skill.sh`（装后剥语音通知 + 中和 LifeOS 路径）
+- LifeOS skill 跨环境适配：`assets/sanitize-lifeos-skill.sh`（位于本 skill 目录；装后剥语音通知 + 中和 LifeOS 路径）
 - 配套监控：taskdeck skill（`~/.config/opencode/skills/taskdeck/`，可选；没装则后台任务回退到日志）
