@@ -3,7 +3,7 @@ name: checkpoint-agent-loop-v4
 description: |
   三角色驱动 v4 —— checkpoint-agent-loop-v3 的设计链路增强版。"一句想法 → 全自动落地"：PM 角色跟你讨论清楚需求，工程师角色一点一点实现，撞墙自动派研究员；到检查点停下等你评审。v4 继承 v3 全部能力（大白话汇报 / TaskDeck / 轮次归档），并新增：
   (5) 设计链路（自动分级）：前端任务按 L1/L2 判级——L1 组件小改走 ui-ux-pro-max 检索 + 口语化确认；L2 新页面/大改走 ui-ux-pro-max 定视觉 → Webdesign 出设计规范 → 你拍板 → 实现；大改/落地页/仪表盘或你说"想先看样子"时，加跑 huashu-design 出三方向高保真原型再拍板。
-  (6) PM 增强：需求讨论阶段 pm 按需调用 PM Skills 18 件套（PRD/旅程图/JTBD/故事板…）；PRD 定稿前跑轻量 RedTeam 出「3 个最强反驳 + 推荐」连 PRD 一起给你——防"确认了伪需求"；L2 大改时 RedTeam 也对设计方案批一轮。
+  (6) PM 增强：需求讨论阶段 pm 按需调用 PM Skills（77 件：PRD/旅程图/JTBD/故事板…）；PRD 定稿前跑轻量 RedTeam 出「3 个最强反驳 + 推荐」连 PRD 一起给你——防"确认了伪需求"；L2 大改时 RedTeam 也对设计方案批一轮。
 
   Use when the user says: 三角色驱动v4 / 三角色v4 / 三角色驱动4.0 / 按 v4 三角色做。
   NOT FOR：只立规矩不搭团队（用 agent-project-bootstrapper）；要原版无改造行为（用 checkpoint-agent-loop）；要 v2/v3 行为（用 checkpoint-agent-loop-v2 / -v3）。
@@ -35,7 +35,7 @@ description: |
 ```
 想法 → 开轮(建 docs/runs/NNN-<功能名>/) → pm(讨论清楚 + RedTeam 批需求) → engineer(落地) → researcher(撞墙探索)
          │                                    │                              │
-         │                                    └─ PM Skills 18件套按需辅助      └─ 前端任务按级走设计链路：
+         │                                    └─ PM Skills 按需辅助            └─ 前端任务按级走设计链路：
          ├─ v2-1 大白话：所有汇报当小白讲，术语配人话                            L1 组件小改：ui-ux-pro-max 检索 → 口语化确认 → 写码
          ├─ v2-2 TaskDeck：后台长任务 task-run 派发，面板看健康                   L2 新页面/大改：ui-ux-pro-max 定视觉 → Webdesign 出规范
          ├─ v3-4 轮次归档：每轮独立目录，根目录指针，做完即归档                                    → 你拍板 → 实现
@@ -63,7 +63,7 @@ description: |
 2. **建角色**：把 `assets/` 下三个 role 文件（`pm.md`/`engineer.md`/`researcher.md`）放到项目的 `.opencode/agent/`，或合并进单个驾驶者 prompt。
 3. **开轮 + 写契约**：每次触发都先「开轮」（建 `docs/runs/NNN-<功能名>/`，刷新根目录 `PRD.md`/`CHECKPOINT-REPORT.md` 指针，规则见 `assets/DRIVER.md`「开轮」）；再复制 `assets/PRD.md.tmpl` 到本轮目录为 `PRD.md`，pm 跟用户讨论填充（按需调 PM Skills；**定稿前跑轻量 RedTeam 批判**），**直到用户确认**。
 4. **开车**：按 `assets/DRIVER.md` 执行主循环（读三件套+本轮PRD → 判门控 → 派 engineer（前端任务自动判 L1/L2 走设计链路）→ 撞墙派 researcher → 后台任务走 TaskDeck → 到检查点用大白话停下）。
-5. **无人值守**（可选）：用 task-run 派发 `assets/loop.sh <session_id> [超时分钟]`（本身就是后台长任务，进面板被监控）。
+5. **无人值守**（可选）：用 `assets/loop.sh <session_id> [超时分钟]` 反复推进；有 TaskDeck 就用 task-run 派发它（面板监控），没有则 `nohup` + 日志。
 
 ## 关键规则
 
@@ -95,7 +95,7 @@ description: |
 - **角色文件放 `.opencode/agent/` 才被 opencode 识别**为 subagent；放其他目录只是普通 markdown。
 - **模型很关键**：pm/researcher 误用强编码模型会让长程成本失控。
 - **门控签名要唯一**：`[[CHECKPOINT]]` 方括号包围，避免与正文普通提及混淆。
-- **TaskDeck（后台服务，可用则用，缺可自装）**：派发前 `curl -s -m 2 http://127.0.0.1:8747/api/health` 探活；**没装 → 自装**（`git clone --depth 1 https://github.com/tiancai4652/taskdeck /tmp/taskdeck && bash /tmp/taskdeck/install.sh`，Python3 stdlib 零依赖、跨平台、默认注册开机自启）；自装失败（无网络等）→ 回退 `nohup` + 本轮目录日志（见 DRIVER「后台长任务」），不阻塞。
+- **TaskDeck（后台服务，可用则用，缺可自装）**：派发前 `curl -s -m 2 http://127.0.0.1:8747/api/health` 探活；**没装 → 自装**（`git clone --depth 1 https://github.com/tiancai4652/taskdeck /tmp/taskdeck && bash /tmp/taskdeck/install.sh && rm -rf /tmp/taskdeck`，Python3 stdlib 零依赖、跨平台、默认注册开机自启）；自装失败（无网络等）→ 回退 `nohup` + 本轮目录日志（见 DRIVER「后台长任务」），不阻塞。
 - **根指针（symlink 或指针壳）**：`PRD.md` / `CHECKPOINT-REPORT.md` 是指向本轮目录文件的入口。mac/Linux 用 `ln -sfn`（读取透明）；**Windows/无权限 → 用指针壳文件**（根文件首行 `POINTER: docs/runs/NNN-<功能名>/PRD.md`），读取方按该行解析。真实文件始终写在本轮目录。
 - **存量项目迁移**：第一次对老项目开轮时，把根目录已有的 `PRD.md`/`CHECKPOINT-REPORT.md` 挪进 `docs/runs/001-<功能名>/` 再建指针，不要覆盖丢历史。
 - **设计链路 / PM skill 来源**（全部探活多根 → 缺则自装 → 装不了降级，完整命令见 DRIVER 依赖矩阵）：
@@ -107,7 +107,7 @@ description: |
   - 旧 `design` skill（claudekit，无公开源）已被 Webdesign 替代，不再引用
   - 新装的 skill 本会话可能加载不到（opencode 启动时载入 skill 列表），当轮走降级、重启后生效
 - **本 skill 面向 opencode**：角色文件放 `.opencode/agent/`、无人值守用 `opencode run --session`、skill 根按上面多根探活；在 claude/codex 上需改角色目录与 loop 命令。
-- **无人值守会烧 token**：`loop.sh` 只处理门控签名，engineer 撞墙必须输出 `[[NEED-RESEARCH]]`，不得硬扛空转。
+- **无人值守会烧 token**：`loop.sh` 处理门控——`[[CHECKPOINT]]` 等评审（超时按推荐继续）、`[[NEEDS-USER]]` 停、`[[NEED-RESEARCH]]` **也停**（无人值守无法派研究员，避免空转）；engineer 撞墙必须输出 `[[NEED-RESEARCH]]`，不得硬扛空转。
 - **新增/修改 skill 后需重启 opencode** 才会被加载。
 
 ## 资源

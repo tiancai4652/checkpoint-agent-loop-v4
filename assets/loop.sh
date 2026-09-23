@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # 三角色驱动 v4 · 无人值守循环
 # 用法: ./loop.sh <session_id> [超时分钟]   （session_id 用 `opencode session list` 查）
-# 依赖: opencode（需登录可用模型）+ taskdeck（本脚本自己也是后台长任务）
+# 依赖: opencode（需登录可用模型）；TaskDeck 可选（有则面板监控，没有则 nohup+日志）
 # 说明: 脚本只认根路径 PRD.md——它是根指针，指向当前轮 docs/runs/NNN-<功能名>/PRD.md，
 #       开新轮时驾驶者会刷新指针，本脚本无需改动。
+#       门控处理：[[CHECKPOINT]] 等评审（超时按推荐继续）；[[NEEDS-USER]] 停；
+#       [[NEED-RESEARCH]] 也停（无人值守无法派研究员，避免空转烧 token）。
 # 启动方式：不要裸跑。有 TaskDeck 用 task-run 派发（面板监控）；没有就 nohup + 日志：
 #   python3 ~/tools/taskdeck/task-run.py \
 #     --name "三角色v4无人值守循环" \
@@ -31,6 +33,10 @@ while true; do
     fi
     echo "超时 ${TIMEOUT_MIN} 分钟，按推荐方案默认继续"
     continue
+  fi
+  if echo "$OUT" | grep -q '\[\[NEED-RESEARCH\]\]'; then
+    echo "engineer 撞墙需研究（[[NEED-RESEARCH]]）：无人值守循环无法派研究员，停下等驾驶者介入"
+    break
   fi
   if echo "$OUT" | grep -q '\[\[NEEDS-USER\]\]'; then
     echo "需要用户决策，停下"; break
