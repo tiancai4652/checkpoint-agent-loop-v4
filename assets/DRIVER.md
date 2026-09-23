@@ -77,7 +77,13 @@ v4 = v3 全部硬规则（大白话汇报、TaskDeck 集成、轮次归档）+ *
    - `--goal` **必须用大白话写**（用户在面板上靠它理解脚本在干嘛）。
    - 派发后**把详情页 URL 告诉用户**；监控看 TaskDeck 面板（http://127.0.0.1:8747/ ，自动判卡死/空转/超期），agent 不做轮询盯梢。
    - **汇报时体检**：到检查点/任何汇报点，用 `curl -s http://127.0.0.1:8747/api/tasks` 汇总本批后台任务的健康状态（运行中 / 疑似卡死 / 疑似空转 / 超期 / 已结束），写进大白话汇报的「有没有坏消息」。
-3. **不可用（换台设备/没装 TaskDeck）→ 回退到带日志的后台**，**不得因此卡住，也不得静默裸跑**：
+3. **不可用（换台设备/没装）→ 先尝试自装 TaskDeck**（公开仓库 + 一键安装器，含开机自启）：
+   ```bash
+   git clone --depth 1 https://github.com/tiancai4652/taskdeck /tmp/taskdeck \
+     && bash /tmp/taskdeck/install.sh && rm -rf /tmp/taskdeck
+   ```
+   装完再探活 → 可用则按上面用 task-run（服务与 task-run 立即生效；skill 说明本会话可能需重启 opencode 才被识别，不影响派发）。
+4. **自装也失败（无网络/无 python3 等）→ 回退到带日志的后台**，**不得因此卡住，也不得静默裸跑**：
    ```bash
    mkdir -p docs/runs/NNN-<功能名>/logs
    nohup <命令> > docs/runs/NNN-<功能名>/logs/<名字>.log 2>&1 &
@@ -85,7 +91,7 @@ v4 = v3 全部硬规则（大白话汇报、TaskDeck 集成、轮次归档）+ *
    ```
    - 告知用户：「本机无 TaskDeck 面板，任务已在后台运行，日志在 `<路径>`」。
    - 汇报时说明"无面板，请按需查看日志"；到检查点用 `ps -p $(cat <pid文件>)` 判断是否还在跑。
-4. 无人值守 `loop.sh` 同样按上面规则启动（有 TaskDeck 走 task-run，没有就 nohup + 日志）。
+5. 无人值守 `loop.sh` 同样按上面规则启动（有 TaskDeck 走 task-run，没有就 nohup + 日志）。
 
 ## 需求批判门控（硬性，v4 核心）
 
@@ -136,6 +142,7 @@ done
 | huashu-design | `git clone --depth 1 https://github.com/alchaincyf/huashu-design /tmp/huashu && rm -f /tmp/huashu/assets/bgm-*.mp3 && rm -rf /tmp/huashu/.git /tmp/huashu/demos && cp -R /tmp/huashu ~/.config/opencode/skills/huashu-design && rm -rf /tmp/huashu`（**只删 BGM mp3，保留 assets 里的 jsx/svg 组件**） | 跳过高保真，用文字方案 |
 | RedTeam | `git clone --depth 1 https://github.com/danielmiessler/LifeOS /tmp/lifeos && cp -R /tmp/lifeos/LifeOS/install/skills/RedTeam ~/.config/opencode/skills/ && rm -rf /tmp/lifeos` → **装后跑 `assets/sanitize-lifeos-skill.sh ~/.config/opencode/skills/RedTeam`**（剥语音通知 + 中和 LifeOS 日志路径） | pm 自查三问 |
 | PM Skills | `git clone --depth 1 https://github.com/deanpeters/Product-Manager-Skills /tmp/pmskills && cp -R /tmp/pmskills/skills/* ~/.config/opencode/skills/ && rm -rf /tmp/pmskills`（仓库 `skills/` 下是 77 个 skill，一次全装） | pm 裸聊，不阻塞 |
+| **TaskDeck**（后台服务，非 skill） | `git clone --depth 1 https://github.com/tiancai4652/taskdeck /tmp/taskdeck && bash /tmp/taskdeck/install.sh && rm -rf /tmp/taskdeck`（Python3 stdlib 零依赖，跨 mac/Linux/Win；默认注册开机自启） | 回退 `nohup` + 本轮目录日志（见「后台长任务」步骤 4） |
 
 **LifeOS 系 skill（Webdesign / RedTeam 等）装后必做**：跑 `assets/sanitize-lifeos-skill.sh <目录>`——否则它们自带「强制语音通知 POST localhost:31337」（无此服务会空跑/报错）和 LifeOS 专属日志路径。
 

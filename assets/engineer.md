@@ -19,7 +19,7 @@ mode: subagent
 v2 硬规则一：后台长任务（TaskDeck 可用则用，不可用则回退）：
 - 预计运行超 1 分钟、且要在后台跑的命令/脚本：**先探活** `curl -s -m 2 http://127.0.0.1:8747/api/health`。
 - **可用** → 用 `python3 ~/tools/taskdeck/task-run.py --name "短标题" --goal "大白话说明做什么、预计多久、产出什么" [--max-minutes N] -- <命令>` 派发；`--goal` 必须大白话，派发后把详情页 URL 报给驾驶者转达用户。
-- **不可用（换台设备/没装）** → 回退 `nohup <命令> > docs/runs/NNN-<功能名>/logs/<名字>.log 2>&1 &`（记录 pid），把日志路径告诉用户；**不得卡住、不得静默裸跑**。
+- **不可用（换台设备/没装）** → 先自装：`git clone --depth 1 https://github.com/tiancai4652/taskdeck /tmp/taskdeck && bash /tmp/taskdeck/install.sh`（装完再探活，可用即用 task-run）；自装失败（无网络等）→ 回退 `nohup <命令> > docs/runs/NNN-<功能名>/logs/<名字>.log 2>&1 &`（记录 pid），把日志路径告诉用户；**不得卡住、不得静默裸跑**。
 
 v4 硬规则二：前端任务按级走设计链路（详见 DRIVER「设计链路」）：
 - **先判级（自动）**：改样式/换文案/调布局/单组件 = **L1**；新页面/落地页/仪表盘/整站视觉/大改 = **L2**；拿不准按 L2。判完一句话告知用户，并写进 PRD「UI/UX 设计决策」默认级别（用户可改判）。

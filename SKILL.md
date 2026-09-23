@@ -93,7 +93,7 @@ description: |
 - **角色文件放 `.opencode/agent/` 才被 opencode 识别**为 subagent；放其他目录只是普通 markdown。
 - **模型很关键**：pm/researcher 误用强编码模型会让长程成本失控。
 - **门控签名要唯一**：`[[CHECKPOINT]]` 方括号包围，避免与正文普通提及混淆。
-- **TaskDeck 依赖（可用则用）**：本机有 `python3 ~/tools/taskdeck/`（127.0.0.1:8747，自动常驻）→ 派发前 `curl -s -m 2 http://127.0.0.1:8747/api/health` 探活；**没装 TaskDeck 的设备**→ 回退到 `nohup` + 本轮目录日志（见 DRIVER「后台长任务」步骤 3），不阻塞。
+- **TaskDeck（后台服务，可用则用，缺可自装）**：派发前 `curl -s -m 2 http://127.0.0.1:8747/api/health` 探活；**没装 → 自装**（`git clone --depth 1 https://github.com/tiancai4652/taskdeck /tmp/taskdeck && bash /tmp/taskdeck/install.sh`，Python3 stdlib 零依赖、跨平台、默认注册开机自启）；自装失败（无网络等）→ 回退 `nohup` + 本轮目录日志（见 DRIVER「后台长任务」），不阻塞。
 - **根指针（symlink 或指针壳）**：`PRD.md` / `CHECKPOINT-REPORT.md` 是指向本轮目录文件的入口。mac/Linux 用 `ln -sfn`（读取透明）；**Windows/无权限 → 用指针壳文件**（根文件首行 `POINTER: docs/runs/NNN-<功能名>/PRD.md`），读取方按该行解析。真实文件始终写在本轮目录。
 - **存量项目迁移**：第一次对老项目开轮时，把根目录已有的 `PRD.md`/`CHECKPOINT-REPORT.md` 挪进 `docs/runs/001-<功能名>/` 再建指针，不要覆盖丢历史。
 - **设计链路 / PM skill 来源**（全部探活多根 → 缺则自装 → 装不了降级，完整命令见 DRIVER 依赖矩阵）：

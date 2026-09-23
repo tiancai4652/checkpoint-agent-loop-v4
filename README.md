@@ -65,7 +65,7 @@ git clone https://github.com/tiancai4652/checkpoint-agent-loop-v4.git \
 | huashu-design | [alchaincyf/huashu-design](https://github.com/alchaincyf/huashu-design)（自装**只删 `assets/bgm-*.mp3`**，保留 jsx/svg 组件） | engineer（按需） | 跳过高保真，用文字方案 |
 | RedTeam | [danielmiessler/LifeOS](https://github.com/danielmiessler/LifeOS) → `LifeOS/install/skills/RedTeam/` | pm | pm 自查三问 |
 | PM Skills | [deanpeters/Product-Manager-Skills](https://github.com/deanpeters/Product-Manager-Skills) → `skills/` 下 **77 个** skill | pm | pm 裸聊，不阻塞 |
-| **TaskDeck** | 本机私有工具（`~/tools/taskdeck/`，127.0.0.1:8747） | engineer | **回退到 `nohup` + 日志文件**，不阻塞（换台设备没装也能跑） |
+| **TaskDeck** | [tiancai4652/taskdeck](https://github.com/tiancai4652/taskdeck)（Python3 stdlib 零依赖，跨 mac/Linux/Win，一键装 + 默认注册开机自启） | engineer | **先自装**；装不了（无网络）才回退 `nohup` + 日志 |
 | agent-project-bootstrapper | 建议先跑，建 AGENTS/DECISIONS/CHECKPOINT-REPORT 三件套底座 | 驾驶者 | 建议先跑再开车 |
 
 > LifeOS 系 skill（Webdesign / RedTeam）装后会自动跑 `assets/sanitize-lifeos-skill.sh` 做适配——剥掉「强制语音通知 POST localhost:31337」、中和 LifeOS 专属日志路径，否则在非 LifeOS 环境会空跑/报错。
@@ -133,7 +133,7 @@ checkpoint-agent-loop-v4/
 
 - **面向 opencode**：角色文件放 `.opencode/agent/`、无人值守用 `opencode run --session`。在 claude/codex 上需改角色目录与 loop 命令。
 - **Windows**：轮次归档的根指针默认用 symlink，Windows（无权限/无开发者模式）会自动降级为「指针壳文件」（根 `PRD.md` 首行 `POINTER: <真实路径>`）。
-- **TaskDeck 是私有工具**：别的设备没有 → 后台任务自动回退 `nohup` + 日志，不影响流程。
+- **TaskDeck 可自装**：别的设备缺 TaskDeck 时自动 `git clone tiancai4652/taskdeck` + `install.sh`（默认注册开机自启）；无网络时回退 `nohup` + 日志，不影响流程。
 - **Webdesign 部分能力依赖 LifeOS**：DirectDesign 路径自包含可用；`/design`、`/design-sync`、ClaudeDesign 需 LifeOS harness / claude.ai，非 LifeOS 环境只有部分能力。
 - **自装需网络 + git**：无网络时直接降级，不阻塞。
 
